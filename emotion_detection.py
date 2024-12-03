@@ -1,9 +1,10 @@
 """Module providing a function printing python version."""
 
-import requests
+
 import json
+import requests
 from flask import Flask, request, render_template
-#pylint emotion_detection.py 
+#pylint emotion_detection.py
 
 FLASK_APP = "app.py"
 FLASK_ENV = "development"
@@ -13,6 +14,8 @@ app=Flask("Emotion_Detection")
 @app.route("/emotionDetector",methods=["POST"])
 @app.route("/detect_emotion",methods=["POST","GET"])
 def emotion_detector(text_to_analyze:str = ""):
+    """Recibe un texto y hace una peticion a IBM Watson para determinar 
+    la carga de emociones en el texto."""
     if request.method == "GET":
         request.args.get("textToAnalyze")
         text_to_analyze = request.args.get("textToAnalyze")
@@ -26,7 +29,7 @@ def emotion_detector(text_to_analyze:str = ""):
     watson_url = watson_url + 'v1/watson.runtime.nlp.v1/NlpService/EmotionPredict'
     header = {"grpc-metadata-mm-model-id": "emotion_aggregated-workflow_lang_en_stock"}
     json_to_send = {"raw_document": {"text":text_to_analyze}}
-    to_return = requests.post(watson_url, headers=header, json=json_to_send)
+    to_return = requests.post(watson_url, headers=header, json=json_to_send, timeout=10)
     print (json_to_send)
     formatted_response = json.loads(to_return.text)
     label = formatted_response['emotionPredictions'][0]["emotion"]
@@ -46,19 +49,19 @@ def emotion_detector(text_to_analyze:str = ""):
 @app.route("/emotionDetector",methods=["get"])
 @app.route("/",methods=["GET"])
 def index():
+    """Recibe las peticiones a la pagina principal y maneja peticiones"""
     text_to_analyze = request.args.get("textToAnalyze")
     if text_to_analyze:
         test_url: str = "http://127.0.0.1:5000/emotionDetector"
         to_analyse = {"to_analyse": text_to_analyze}
-        response = json.loads(requests.post(test_url, json=to_analyse).text)
+        response = json.loads(requests.post(test_url, json=to_analyse, timeout=10).text)
         return response
-    else:
-        return render_template("index.html",responseText = text_to_analyze)
-    #return "SOME TEXTO"
+    return render_template("index.html",responseText = text_to_analyze)
 
 @app.errorhandler(404)
 @app.errorhandler(400)
-def errorhandler(e):
+def errorhandler():
+    """Aparece en caso de error en el servidor para errores 400"""
     return "Page not found."
 
 if __name__=="__main__":
